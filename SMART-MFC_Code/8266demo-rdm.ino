@@ -18,7 +18,10 @@ String IO_KEY  =     "aio_kdyu82j8scwf9zQ65mE348JAyuWq";
 String WIFI_SSID = "UD Devices"; 	    //Only need to change if using other network, eduroam won't work with ESP8266
 String WIFI_PASS = ""; 		            //Blank for open network
 float num = 1.0; 			                  //Counts up to show upload working
-float temp;
+float temperature;
+
+// DHT pin 3 type DHT11
+  DHT dht(3, 11);
 
 void setup() {
 	Serial.begin(9600);		// set up serial monitor with 9600 baud rate
@@ -35,8 +38,13 @@ void setup() {
 		while(1);
 	}
 	resp = espData("setup_feed=1,CPEG-ELEG298",2000,false);	//start the data feed
-	pinMode(3, OUTPUT);
-  temp = digitalRead(3);
+	
+  // Sets pin 3 to output
+  pinMode(3, OUTPUT);
+  temperature = digitalRead(3);
+  
+  dht.begin();
+
   Serial.println("------ Setup Complete ----------");
 }
 
@@ -49,8 +57,14 @@ void loop() {
   
 	String resp = espData("send_data=1,"+String(num),2000,false); //send feed to cloud
 	num = num +0.5;			// Count by 0.5 increments
-  temp = digitalRead(3);
-  Serial.println(temp);
+
+  Serial.print("Attempting to Read from pin 3\n");
+  temperature = digitalRead(3);  
+  Serial.println(temperature);
+
+  Serial.print("Attempting to read temperature from function\n");
+  temperature = dht.readTemperature(false);
+  Serial.println(temperature);
 }
 
 String espData(String command, const int timeout, boolean debug) {

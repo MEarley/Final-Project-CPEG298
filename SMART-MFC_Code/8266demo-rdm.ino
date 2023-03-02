@@ -1,3 +1,6 @@
+#include <DHT.h>
+#include <DHT_U.h>
+
 /***************************************************************************
   This is an example program for the sending a counter to Adafruit IO using
   an ESP8266 WiFi module.  You will need to correct the WiFi SSID and password
@@ -8,12 +11,14 @@
  ***************************************************************************/
 #include "Arduino.h"
 #include <SoftwareSerial.h>		          //Allows us to use two GPIO pins for a second UART
+#define TEMPPIN D3
 SoftwareSerial espSerial(11,10);	      //Create software UART to talk to the ESP8266
 String IO_USERNAME = "MEarley";
 String IO_KEY  =     "aio_kdyu82j8scwf9zQ65mE348JAyuWq";
 String WIFI_SSID = "UD Devices"; 	    //Only need to change if using other network, eduroam won't work with ESP8266
 String WIFI_PASS = ""; 		            //Blank for open network
 float num = 1.0; 			                  //Counts up to show upload working
+float temp;
 
 void setup() {
 	Serial.begin(9600);		// set up serial monitor with 9600 baud rate
@@ -30,17 +35,22 @@ void setup() {
 		while(1);
 	}
 	resp = espData("setup_feed=1,CPEG-ELEG298",2000,false);	//start the data feed
-	Serial.println("------ Setup Complete ----------");
+	pinMode(3, OUTPUT);
+  temp = digitalRead(3);
+  Serial.println("------ Setup Complete ----------");
 }
 
 void loop() {
 
 	// free version of Adafruit IO only allows 30 uploads/minute, it discards everything else
 	delay(5000);			// Wait 5 seconds between uploads
-	Serial.print("Num is: ");
+	Serial.print("Num is: ");  
 	Serial.println(num);
+  
 	String resp = espData("send_data=1,"+String(num),2000,false); //send feed to cloud
 	num = num +0.5;			// Count by 0.5 increments
+  temp = digitalRead(3);
+  Serial.println(temp);
 }
 
 String espData(String command, const int timeout, boolean debug) {

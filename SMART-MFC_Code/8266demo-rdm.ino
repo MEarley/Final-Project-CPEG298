@@ -19,9 +19,10 @@ String WIFI_SSID = "UD Devices"; 	    //Only need to change if using other netwo
 String WIFI_PASS = ""; 		            //Blank for open network
 float num = 1.0; 			                  //Counts up to show upload working
 float temperature;
+int temp;
 
 // DHT pin 3 type DHT11
-  DHT dht(3, 11);
+  DHT dht(6, 11);
 
 void setup() {
 	Serial.begin(9600);		// set up serial monitor with 9600 baud rate
@@ -40,8 +41,8 @@ void setup() {
 	resp = espData("setup_feed=1,CPEG-ELEG298",2000,false);	//start the data feed
 	
   // Sets pin 3 to output
-  pinMode(3, OUTPUT);
-  temperature = digitalRead(3);
+  pinMode(6, OUTPUT);
+  temp = analogRead(6);
   
   dht.begin();
 
@@ -52,19 +53,23 @@ void loop() {
 
 	// free version of Adafruit IO only allows 30 uploads/minute, it discards everything else
 	delay(5000);			// Wait 5 seconds between uploads
-	Serial.print("Num is: ");  
-	Serial.println(num);
+	//Serial.print("Num is: ");  
+	//Serial.println(num);
   
-	String resp = espData("send_data=1,"+String(num),2000,false); //send feed to cloud
-	num = num +0.5;			// Count by 0.5 increments
+	
+	//num = num +0.5;			// Count by 0.5 increments
 
-  Serial.print("Attempting to Read from pin 3\n");
-  temperature = digitalRead(3);  
-  Serial.println(temperature);
+  Serial.print("Attempting to Read from pin 6\n");
+  temp = analogRead(6);  
+  Serial.println(temp);
+
+  /*
 
   Serial.print("Attempting to read temperature from function\n");
   temperature = dht.readTemperature(false);
-  Serial.println(temperature);
+  Serial.println(temperature);*/
+
+  String resp = espData("send_data=1,"+String(temp),2000,false); //send feed to cloud
 }
 
 String espData(String command, const int timeout, boolean debug) {

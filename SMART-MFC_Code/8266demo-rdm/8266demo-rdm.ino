@@ -1,6 +1,3 @@
-#include <DHT.h>
-#include <DHT_U.h>
-
 /***************************************************************************
   This is an example program for the sending a counter to Adafruit IO using
   an ESP8266 WiFi module.  You will need to correct the WiFi SSID and password
@@ -11,15 +8,21 @@
  ***************************************************************************/
 #include "Arduino.h"
 #include <SoftwareSerial.h>		          //Allows us to use two GPIO pins for a second UART
+#include "Seeed_BMP280.h"
+#include <Wire.h>
+#include <DHT.h>
+#include <DHT_U.h>
 #define TEMPPIN D3
 SoftwareSerial espSerial(11,10);	      //Create software UART to talk to the ESP8266
+BMP280 BMP;
 String IO_USERNAME = "MEarley";
 String IO_KEY  =     "aio_kdyu82j8scwf9zQ65mE348JAyuWq";
 String WIFI_SSID = "UD Devices"; 	    //Only need to change if using other network, eduroam won't work with ESP8266
 String WIFI_PASS = ""; 		            //Blank for open network
 float num = 1.0; 			                  //Counts up to show upload working
 float temperature;
-int temp;
+int lightLevel;
+float humidity;
 
 // DHT pin 3 type DHT11
   DHT dht(6, 11);
@@ -39,10 +42,17 @@ void setup() {
 		while(1);
 	}
 	resp = espData("setup_feed=1,CPEG-ELEG298",2000,false);	//start the data feed
+
+  // Initiate BMP280
+  if(!BMP.init()){
+    Serial.println("Failed to initate BMP280");
+  } else{
+    Serial.println("Successfully initated BMP280");
+  }
 	
   // Sets pin 3 to output
   pinMode(6, OUTPUT);
-  temp = analogRead(6);
+  lightLevel = analogRead(6);
   
   dht.begin();
 
@@ -59,9 +69,19 @@ void loop() {
 	
 	//num = num +0.5;			// Count by 0.5 increments
 
-  Serial.print("Attempting to Read from pin 6\n");
-  temp = analogRead(6);  
-  Serial.println(temp);
+  Serial.print("Attempting to read light levels from pin 6\n");
+  lightLevel = analogRead(6);  
+  Serial.println(lightLevel);
+
+  Serial.print("Attempting to read temperature from BMP280\n");
+  temperature = BMP.getTemperature();  
+  Serial.print(temperature);
+  serial.println(" C");
+
+  Serial.print("Attempting to read humidity from BMP280\n");
+  humidity = BMP.getHumidity();  
+  Serial.print(humidity);
+  serial.println(" UNIT");
 
   /*
 
@@ -69,7 +89,7 @@ void loop() {
   temperature = dht.readTemperature(false);
   Serial.println(temperature);*/
 
-  String resp = espData("send_data=1,"+String(temp),2000,false); //send feed to cloud
+  String resp = espData("send_data=1,"+String(temperature),2000,false); //send feed to cloud
 }
 
 String espData(String command, const int timeout, boolean debug) {

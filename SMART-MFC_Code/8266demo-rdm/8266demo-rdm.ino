@@ -28,7 +28,7 @@ float humidity;
   DHT dht(6, 11);
 
 void setup() {
-	Serial.begin(9600);		// set up serial monitor with 9600 baud rate
+	Serial.begin(9600);		// set up Serial monitor with 9600 baud rate
 	espSerial.begin(9600);		// set up software UART to ESP8266 @ 9600 baud rate
 	Serial.println("setting up");
 	String resp = espData("get_macaddr",2000,true);	//get MAC address of 8266
@@ -76,12 +76,12 @@ void loop() {
   Serial.print("Attempting to read temperature from BMP280\n");
   temperature = BMP.getTemperature();  
   Serial.print(temperature);
-  serial.println(" C");
+  Serial.println(" C");
 
-  Serial.print("Attempting to read humidity from BMP280\n");
-  humidity = BMP.getHumidity();  
-  Serial.print(humidity);
-  serial.println(" UNIT");
+  //Serial.print("Attempting to read humidity from BMP280\n");
+  //humidity = BMP.getHumidity();  
+  //Serial.print(humidity);
+  //Serial.println(" UNIT");
 
   /*
 
@@ -94,13 +94,13 @@ void loop() {
 
 String espData(String command, const int timeout, boolean debug) {
 	String response = "";
-	espSerial.println(command);	//send data to ESP8266 using serial UART
+	espSerial.println(command);	//send data to ESP8266 using Serial UART
 	long int time = millis();
 	while ( (time + timeout) > millis()) {	//wait the timeout period sent with the command
 		while (espSerial.available()) {	//look for response from ESP8266
 			char c = espSerial.read();
 			response += c;
-			Serial.print(c);	//print response on serial monitor
+			Serial.print(c);	//print response on Serial monitor
 		}
 	}
 	if (debug) {

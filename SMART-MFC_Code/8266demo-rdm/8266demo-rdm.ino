@@ -74,9 +74,6 @@ void setup() {
   //dht.begin();
   //u8g2.begin();
 
-  // Millivolt Reader
-  
-
   Serial.println("------ Setup Complete ----------");
 }
 

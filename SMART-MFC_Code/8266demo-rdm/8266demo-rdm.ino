@@ -10,9 +10,26 @@
 #include <SoftwareSerial.h>		          //Allows us to use two GPIO pins for a second UART
 #include "Seeed_BMP280.h"
 #include <Wire.h>
-#include <DHT.h>
-#include <DHT_U.h>
+//#include <DHT.h>
+//#include <DHT_U.h>
 #define TEMPPIN D3
+#include <U8g2lib.h>
+
+
+// u8g2 Library Definitions
+#ifdef U8X8_HAVE_HW_SPI
+#include <SPI.h>
+#endif
+#ifdef U8X8_HAVE_HW_I2C
+//#include <Wire.h>
+#endif
+
+//U8G2_SSD1306_128X64_ALT0_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE); // SSD1306 and SSD1308Z are compatible
+ 
+// U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);    //Low spped I2C
+// End of u8g2
+
+
 SoftwareSerial espSerial(11,10);	      //Create software UART to talk to the ESP8266
 BMP280 BMP;
 String IO_USERNAME = "MEarley";
@@ -25,7 +42,7 @@ int lightLevel;
 float humidity;
 
 // DHT pin 3 type DHT11
-  DHT dht(6, 11);
+  //DHT dht(6, 11);
 
 void setup() {
 	Serial.begin(9600);		// set up Serial monitor with 9600 baud rate
@@ -54,7 +71,8 @@ void setup() {
   pinMode(6, OUTPUT);
   lightLevel = analogRead(6);
   
-  dht.begin();
+  //dht.begin();
+  //u8g2.begin();
 
   Serial.println("------ Setup Complete ----------");
 }
@@ -88,6 +106,17 @@ void loop() {
   Serial.print("Attempting to read temperature from function\n");
   temperature = dht.readTemperature(false);
   Serial.println(temperature);*/
+/*
+  // u8g2 Display
+  u8g2.clearBuffer();                   // clear the internal memory
+  u8g2.setFlipMode(1);
+  u8g2.setFont(u8g2_font_ncenB08_tr);   // choose a suitable font
+  //char *TemperatureString;
+  //TemperatureString = malloc(sizeof(char) * 30);
+  //sprintf(TemperatureString,"P: %.2f C",25.3423);
+  //u8g2.drawStr(0,10,TemperatureString);    // write something to the internal memory
+  u8g2.sendBuffer();                    // transfer internal memory to the display
+  // End of Display    */
 
   String resp = espData("send_data=1,"+String(temperature),2000,false); //send feed to cloud
 }

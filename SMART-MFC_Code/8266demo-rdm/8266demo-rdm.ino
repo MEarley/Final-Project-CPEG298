@@ -1,61 +1,52 @@
 /***************************************************************************
-  This is an example program for the sending a counter to Adafruit IO using
+  SMART MFC
+    IoT Device code for a Microbial Fuel Cell: MFC for short. The purpose of this
+    device is to measure the voltage and the surrounding environment
+    of said cell for research purposes.
+    Measures:
+      Millivolts, Temperature, Humidity, Light, and Soil moisture 
+
+  written by Michael Earley
+  05/8/2023
+ ***************************************************************************/
+#include "Arduino.h"
+#include <SoftwareSerial.h>		          //Allows us to use two GPIO pins for a second UART
+#include <Wire.h>
+#include <DHT20.h>                      // Library used to access the DHT20 (By Rob Tillaart)
+DHT20 DHT(&Wire);
+
+#define TEMPPIN D3
+#define TEMPTHRESHOLD 25
+#define TEXTDIVIDER "__________________________________________"
+
+SoftwareSerial espSerial(10,11);	      //Create software UART to talk to the ESP8266
+
+String IO_USERNAME = "";		    // Adafruit IO used
+String IO_KEY  =     "";
+String WIFI_SSID = ""; 	    
+String WIFI_PASS = ""; 		            //Blank for open network
+
+float temperature;
+int lightLevel;
+float humidity;
+float voltage = 0.000000000;
+
+float moisture;
+const float VOLTREF = 1.1;
+
+// Define Pins
+const int LIGHTPIN = A0;
+const int VOLTPIN = A1;
+const int SOILPIN = A2;
+
+/***************************************************************************
+  This is an example program for sending a counter to Adafruit IO using
   an ESP8266 WiFi module.  You will need to correct the WiFi SSID and password
   and add your Adafruit IO username and Key.
 
   written by Theo Fleck and Rick Martin
   03/25/2020
  ***************************************************************************/
-#include "Arduino.h"
-#include <SoftwareSerial.h>		          //Allows us to use two GPIO pins for a second UART
-#include "Seeed_BMP280.h"
-#include <Wire.h>
-//#include <DHT.h>
-//#include <DHT_U.h>
-#include <U8g2lib.h>
-
-#define TEMPPIN D3
-#define R1 1000
-#define R2 1000
-#define VOLTREF 1
-
-
-// u8g2 Library Definitions
-#ifdef U8X8_HAVE_HW_SPI
-#include <SPI.h>
-#endif
-#ifdef U8X8_HAVE_HW_I2C
-//#include <Wire.h>
-#endif
-
-//U8G2_SSD1306_128X64_ALT0_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE); // SSD1306 and SSD1308Z are compatible
- 
-// U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);    //Low spped I2C
-// End of u8g2
-
-
-SoftwareSerial espSerial(11,10);	      //Create software UART to talk to the ESP8266
-BMP280 BMP;
-String IO_USERNAME = "MEarley";
-String IO_KEY  =     "aio_kdyu82j8scwf9zQ65mE348JAyuWq";
-String WIFI_SSID = "UD Devices"; 	    //Only need to change if using other network, eduroam won't work with ESP8266
-String WIFI_PASS = ""; 		            //Blank for open network
-
-float num = 1.0; 			                  //Counts up to show upload working
-float temperature;
-int lightLevel;
-float humidity;
-float voltageAC = 0.000000000;
-float moisture;
-int clk = 0;
-
-// Define Pins
-int LIGHTPIN = A0;
-int VOLTPIN = A1;
-int SOILPIN = A2;
-
-// DHT pin 3 type DHT11
-  //DHT dht(6, 11);
 
 void setup() {
 	Serial.begin(9600);		// set up Serial monitor with 9600 baud rate
@@ -71,120 +62,165 @@ void setup() {
 		Serial.println("\nAdafruit IO Connection Failed");
 		while(1);
 	}
-	resp = espData("setup_feed=1,CPEG-ELEG298",2000,false);	//start the data feed
 
-  // Initiate BMP280
-  if(!BMP.init()){
-    Serial.println("Failed to initate BMP280");
-  } else{
-    Serial.println("Successfully initated BMP280");
-  }
-	
-  // Sets pin 6 to output
+
+  // DHT20 Library Setup
+  #if defined(ESP8266) || defined(ESP32)
+  DHT.begin(12, 13); //  select your pin numbers here
+  #else
+  DHT.begin();
+  #endif
+
+  Serial.print("DHT20 LIBRARY VERSION: ");
+  Serial.println(DHT20_LIB_VERSION);
+  Serial.println();
+
+  // Sets Pins for Senors
   pinMode(LIGHTPIN, INPUT);
+  Serial.print("Light Sensor Pin set to: ");
+  Serial.println(LIGHTPIN);
   lightLevel = analogRead(LIGHTPIN);
+  pinMode(VOLTPIN, INPUT);
+  Serial.print("Voltage Pin set to: ");
+  Serial.println(VOLTPIN);
+  pinMode(SOILPIN,INPUT);
+  Serial.print("Soil Moisture Sensor Pin set to: ");
+  Serial.println(SOILPIN);
+  moisture = analogRead(SOILPIN);  
 
-  // Temp Threshold
+  //start the data feed  
+  resp = espData("setup_feed=1,Voltage (mV)",2000,false);	// Voltage
+  resp = espData("setup_feed=2,Light Level",2000,false); // Light
+  resp = espData("setup_feed=3,Temperature (C)",2000,false); // Temperature
+  resp = espData("setup_feed=4,Humidity (P)",2000,false); // Humidity
+  resp = espData("setup_feed=5,Soil Moisture Level",2000,false); // Soil
+  
+
+  // Temp Threshold LED
   pinMode(6, OUTPUT);
-  // Moisture Threshold
+  // Moisture Threshold LED
   pinMode(7, OUTPUT);
-  //dht.begin();
-  //u8g2.begin();
-
-  // Millivolt Reader
-  pinMode(1, INPUT);
 
   Serial.println("------ Setup Complete ----------");
 }
 
+// DISCLAIMER: Possibly due to the amount of noise generated in the GND by other components, the millivolt reader does not read the correct values. 
+// More tweaking is needed
 //returns Voltage in millivolts
-float calculateVoltage(float &voltSum){
-  float resistorRatio = (R2 / (float)(R1 + R2));
-  float adcVolts = (float)(VOLTREF * (voltSum / 1000));
-  //Serial.println(resistorRatio);
-  adcVolts /= (float)1024;
-  //Serial.println(adcVolts);
-  adcVolts /= resistorRatio; 
-  //Serial.println(adcVolts);
-  voltSum = 0;
-  return 1000 * adcVolts;
+void calculateVoltage(void){
+  analogReference(INTERNAL);  // Sets voltage reference to 1.1v to allow precise millivolt reading 
+  voltage = VOLTREF * analogRead(VOLTPIN);
+  Serial.println(voltage);
+  analogReference(DEFAULT);  
+  delay(1000);
+  return;
 }
 
 void loop() {
 
 	// free version of Adafruit IO only allows 30 uploads/minute, it discards everything else
-	delay(5);			
-  clk += 5;
+  delay(5000);	 // Wait 5 seconds  between uploads	
+  // Voltage Meter
+  Serial.println(TEXTDIVIDER); // Serial Monitor Divider
+  Serial.print("Voltage (mV), ");
+  calculateVoltage();
+  String resp = espData("send_data=1,"+String(voltage),2000,false); //send feed to cloud
   
-	//Serial.print("Num is: ");  
-	//Serial.println(num);
-  //voltageAC += analogRead(VOLTPIN);
-  voltageAC += 2.5; // Test
-  if(voltageAC == 5000){
-    Serial.print("Nice\n"); 
+  // Reading Grove Light Sensor
+  Serial.println(TEXTDIVIDER); // Serial Monitor Divider
+  Serial.print("Light Level, ");
+  lightLevel = analogRead(LIGHTPIN);  
+  Serial.print(lightLevel);
+  resp = espData("send_data=2,"+String(lightLevel),2000,false); //send feed to cloud
+  
+  // Reading DHT20 Grove Temperature sensor
+  //-------------------------------------------------------------
+  // DHT20 Temperature and Humidity Sensor Demo code
+  // By library author: Rob Tillaart
+  // Edited by: Michael Earley  
+
+  //  READ DATA
+  Serial.println(TEXTDIVIDER); // Serial Monitor Divider
+  Serial.print("DHT20, \t");
+  int status = DHT.read();
+  switch (status)
+  {
+  case DHT20_OK:
+    Serial.print("OK,\t");
+    break;
+  case DHT20_ERROR_CHECKSUM:
+    Serial.print("Checksum error,\t");
+    break;
+  case DHT20_ERROR_CONNECT:
+    Serial.print("Connect error,\t");
+    break;
+  case DHT20_MISSING_BYTES:
+    Serial.print("Missing bytes,\t");
+    break;
+  case DHT20_ERROR_BYTES_ALL_ZERO:
+    Serial.print("All bytes read zero");
+    break;
+  case DHT20_ERROR_READ_TIMEOUT:
+    Serial.print("Read time out");
+    break;
+  case DHT20_ERROR_LASTREAD:
+    Serial.print("Error read too fast");
+    break;
+  default:
+    Serial.print("Unknown error,\t");
+    break;
   }
-	if((clk % 5000 == 0) && clk != 0){  // Wait 5 seconds  between uploads
-    //num = num +0.5;			// Count by 0.5 increments
-    clk = 0;
-    //Serial.println(voltageAC);
-    Serial.print("Measured voltage (mV)\n");
-    Serial.println(calculateVoltage(voltageAC));
-    Serial.println(voltageAC);
-    String resp = espData("send_data=1,"+String(voltageAC),2000,false); //send feed to cloud
 
-    // Reading Grove Light Sensor
-    Serial.print("Attempting to read light levels from pin 6\n");
-    lightLevel = analogRead(LIGHTPIN);  
-    Serial.println(lightLevel);
-    String resp = espData("send_data=2,"+String(lightlevel),2000,false); //send feed to cloud
+  //  DISPLAY DATA, sensor has only one decimal.
+  humidity = DHT.getHumidity();    
+  Serial.print(humidity, 1);
+  Serial.print("%,\t");
+  temperature = DHT.getTemperature();
+  Serial.print(temperature, 1);
+  Serial.println(" °C");
 
-    // Reading DHT20 Grove Temperature sensor
-    Serial.print("Attempting to read temperature from BMP280\n");
-    temperature = BMP.getTemperature();  
-    Serial.print(temperature);
-    Serial.println(" C");
-    String resp = espData("send_data=3,"+String(temperature),2000,false); //send feed to cloud
+  //-------------------------------------------------------------
 
-    // Reading Grove Soil Moisture Sensor
-    Serial.print("Attempting to read soil moisture levels from sensor (Pin: %d)",SOILPIN);
-    moisture = analogRead(SOILPIN);
-    Serial.println(moisture);
-    String resp = espData("send_data=4,"+String(moisture),2000,false); //send feed to cloud
+  resp = espData("send_data=3,"+String(temperature),2000,false); //send feed to cloud
+  resp = espData("send_data=4,"+String(humidity),2000,false); //send feed to cloud
 
-    // Threshold for Temperature
-    if(temperature > 20){
-      digitalWrite(6, HIGH);   
-    } else{ digitalWrite(6, LOW); }
+  // Reading Grove Soil Moisture Sensor
+  Serial.println(TEXTDIVIDER); // Serial Monitor Divider
+  Serial.print("Soil Moisture, ");
+  moisture = analogRead(SOILPIN);
+  Serial.println(moisture);
+  resp = espData("send_data=5,"+String(moisture),2000,false); //send feed to cloud
 
-    // Threshold for mositure
-    if(moisutre > 300 /* Place Holder*/){
-      digitalWrite(7,HIGH);
-    } else{ digitalWrite(7,LOW);}
+  // Soil Moisture Metrics
 
-    //Serial.print("Attempting to read humidity from BMP280\n");
-    //humidity = BMP.getHumidity();  
-    //Serial.print(humidity);
-    //Serial.println(" UNIT");
-
-    /*
-
-    Serial.print("Attempting to read temperature from function\n");
-    temperature = dht.readTemperature(false);
-    Serial.println(temperature);*/
-    /*
-    // u8g2 Display
-    u8g2.clearBuffer();                   // clear the internal memory
-    u8g2.setFlipMode(1);
-    u8g2.setFont(u8g2_font_ncenB08_tr);   // choose a suitable font
-    //char *TemperatureString;
-    //TemperatureString = malloc(sizeof(char) * 30);
-    //sprintf(TemperatureString,"P: %.2f C",25.3423);
-    //u8g2.drawStr(0,10,TemperatureString);    // write something to the internal memory
-    u8g2.sendBuffer();                    // transfer internal memory to the display
-    // End of Display    */
-
-    String resp = espData("send_data=1,"+String(temperature),2000,false); //send feed to cloud
+  if(moisture<=300){
+    Serial.println("The soil is dry.");
   }
+  else if(moisture > 300 && moisture <= 700){
+    Serial.println("The soil is humid.");
+  }
+  else if(moisture > 700 && moisture <= 950){
+    Serial.println("The soil is wet.");
+  }
+  else{
+    Serial.println("ERROR: Undefined Soil Moisture Level");
+  }
+
+
+  // Threshold for Temperature
+  Serial.println(TEXTDIVIDER); // Serial Monitor Divider
+  if(temperature > TEMPTHRESHOLD){
+    digitalWrite(6, HIGH);   
+    Serial.print("Temperature exceeds set threshold of ");
+    Serial.print(TEMPTHRESHOLD);
+    Serial.println(" °C");      
+  } else{ digitalWrite(6, LOW); }
+
+  // Threshold for moisture
+  if(moisture > 250 /* Place Holder*/){
+    digitalWrite(7,HIGH);
+  } else{ digitalWrite(7,LOW);}
+
 }
 
 String espData(String command, const int timeout, boolean debug) {

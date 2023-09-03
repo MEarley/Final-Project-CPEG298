@@ -1,15 +1,18 @@
 # Internet of Things Device for a Microbial Fuel Cell: IoT MFC
 The purpose of this device is to measure the voltage and the surrounding environment of the said cell for research purposes.
 
-#### Schematic of SMART MFC (KiCAD)
+## Schematic of SMART MFC (KiCAD)
+![image](https://github.com/MEarley/CPEG298_FinalProject/assets/113404793/ae231522-9151-4e37-b181-f97c72a90d20)
 
+## SMART MFC CAM
+### Front 									
+![PCB_Front](https://github.com/MEarley/CPEG298_FinalProject/assets/113404793/50fddae6-fda2-48a6-be3e-9420cafbc71e)
 
-SMART MFC CAM
-Front 									Back
+### Back
+![PCB_Back](https://github.com/MEarley/CPEG298_FinalProject/assets/113404793/f8dfd71b-6c53-4b89-ac56-7675e2986e40)
 
-‘
-#### SMART MFC BOM
-
+## SMART MFC BOM
+![image](https://github.com/MEarley/CPEG298_FinalProject/assets/113404793/9104c429-e4fa-4274-bc58-6a8e3fac828a)
 
 ## Arduino code
 The entire Arduino sketch is divided into 3 main functions: setup(), loop(), and espData(). 
@@ -23,40 +26,40 @@ Within the loop() function, the entire block of code repeats every ~5 seconds. T
 Within the espData() function, the given command and data are sent to the ESP8266 using Serial UART. After the data has been sent, the function waits for a response from the ESP8266. This leads to the function printing out the response within the Serial Monitor where it can be viewed for debugging purposes.
 
 ## Libraries and Additional Sources
-Arduino.h
+ • Arduino.h
+ 
+ • Wire.h
 
-Wire.h
+ • SoftwareSerial.h | Allows usage of two GPIO pins for a second UART
 
-SoftwareSerial.h | Allows usage of two GPIO pins for a second UART
-
-DHT20.h | Allows for easier usage of the DHT20
-ESP8266 Example program provided by Theo Fleck and Rick Martin
-DHT20 Demo code provided by library author Rob Tillaart
+ • DHT20.h | Allows for easier usage of the DHT20
+   ESP8266 Example program provided by Theo Fleck and Rick Martin
+   DHT20 Demo code provided by library author Rob Tillaart
 
 ## Adafruit Dashboard
+![image](https://github.com/MEarley/CPEG298_FinalProject/assets/113404793/3fa73776-7451-4a19-8d6c-f6db12ca23af)
 
+### Line Graphs
 
-Line Graphs
+ • Light Level | Displays the level of light over a given time interval time
 
-Light Level | Displays the level of light over a given time interval time
+ • Soil Moisture Level | Displays the level of moisture in the soil over a given time interval time
 
-Soil Moisture Level | Displays the level of moisture in the soil over a given time interval time
+ • Voltage | Displays the voltage in millivolts of the MFC in a given time interval time   
+### Circle Graphs
 
-Voltage | Displays the voltage in millivolts of the MFC in a given time interval time   
-Circle Graphs
+ • Soil Moisture Level | Displays the current level of moisture within the soil with thresholds between 250 - 700
 
-Soil Moisture Level | Displays the current level of moisture within the soil with thresholds between 250 - 700
+ • Temperature | Displays the current temperature with a threshold between 20 - 55℃
+### Indicators
 
-Temperature | Displays the current temperature with a threshold between 20 - 55℃
-Indicators
+ • Soil Moisture Level | Indicates when the current soil moisture level is over 250
 
-Soil Moisture Level | Indicates when the current soil moisture level is over 250
+•  Temperature Level | Indicates when the current temperature is below 25℃
 
-Temperature Level | Indicates when the current temperature is below 25℃
+•  Humidity Bar Graph | Displays current relative humidity
 
-Humidity Bar Graph | Displays current relative humidity
-
-Feed | Displays data messages between Adafruit and the ESP8266
+•  Feed | Displays data messages between Adafruit and the ESP8266
 
 ## Future Changes
 In terms of redesign, the voltmeter on the reader still requires tweaking and is the only leading cause of concern. Its purpose in this project is to measure the produced voltage from a Microbial Fuel Cell, which in itself is like a battery having both a positive and negative node. The rise of concern comes from trying to read the amount of voltage produced by the said battery. The Microbial Fuel Cells, or MFC, that are being used in this report can range from 1 mV to 100 mV or more. 

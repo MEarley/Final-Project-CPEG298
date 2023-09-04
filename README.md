@@ -2,17 +2,17 @@
 The purpose of this device is to measure the voltage and the surrounding environment of the said cell for research purposes.
 
 ## Schematic of SMART MFC (KiCAD)
-![image](https://github.com/MEarley/CPEG298_FinalProject/assets/113404793/ae231522-9151-4e37-b181-f97c72a90d20)
+![Screenshot](docs/images/CPEG298_Schematic.png)
 
 ## SMART MFC CAM
 ### Front 									
-![PCB_Front](https://github.com/MEarley/CPEG298_FinalProject/assets/113404793/50fddae6-fda2-48a6-be3e-9420cafbc71e)
+![Screenshot](docs/images/PCB_Front.png)
 
 ### Back
-![PCB_Back](https://github.com/MEarley/CPEG298_FinalProject/assets/113404793/f8dfd71b-6c53-4b89-ac56-7675e2986e40)
+![Screenshot](docs/images/PCB_Back.png)
 
 ## SMART MFC BOM
-![image](https://github.com/MEarley/CPEG298_FinalProject/assets/113404793/9104c429-e4fa-4274-bc58-6a8e3fac828a)
+![Screenshot](docs/images/CPEG298_BOM.png)
 
 ## Arduino code
 The entire Arduino sketch is divided into 3 main functions: setup(), loop(), and espData(). 
@@ -37,7 +37,7 @@ Within the espData() function, the given command and data are sent to the ESP826
    DHT20 Demo code provided by library author Rob Tillaart
 
 ## Adafruit Dashboard
-![image](https://github.com/MEarley/CPEG298_FinalProject/assets/113404793/3fa73776-7451-4a19-8d6c-f6db12ca23af)
+![Screenshot](docs/images/CPEG298_Dashboard.png)
 
 ### Line Graphs
 
